@@ -1,0 +1,23 @@
+{
+  "name": "prompt-builder-cli",
+  "version": "1.0.0",
+  "description": "Generate `.clinerules`, `.roomodes` and `.claude_preferences` files",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "mustache": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "@types/mustache": "^4.2.5",
+    "@types/node": "^18.15.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "pnpm@9.12.3"
+}
