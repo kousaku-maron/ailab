@@ -1,301 +1,152 @@
-# コーディングプラクティス
+# AI 駆動開発のためのコーディングガイドライン
 
-## 原則
+## 基本原則: コンテキスト最適化アプローチ
 
-### 関数型アプローチ (FP)
+関連するコードを同じファイルに集約し、ファイル数を最小限に抑えることで、AI がコードを理解しやすくします。
 
-- 純粋関数を優先
-- 不変データ構造を使用
-- 副作用を分離
-- 型安全性を確保
+- **コンテキスト依存の最小化**: 必要なファイル数を減らす
+- **関連コードの集約**: 機能的に関連するコードを同じファイルに配置
+- **明確な責任境界**: 各ファイルの役割と責任を明確に定義
+- **一貫したパターン**: すべての層で同じ設計パターンを適用
 
-### ドメイン駆動設計 (DDD)
+## コンポーネント層設計
 
-- 値オブジェクトとエンティティを区別
-- 集約で整合性を保証
-- リポジトリでデータアクセスを抽象化
-- 境界付けられたコンテキストを意識
+### 組織化原則
 
-### テスト駆動開発 (TDD)
-
-- Red-Green-Refactorサイクル
-- テストを仕様として扱う
-- 小さな単位で反復
-- 継続的なリファクタリング
-
-## 実装パターン
-
-### 型定義
-
-- typeよりinterfaceを優先
-
-### 値オブジェクト
-
-- 不変
-- 値に基づく同一性
-- 自己検証
-- ドメイン操作を持つ
-
-### エンティティ
-
-- IDに基づく同一性
-- 制御された更新
-- 整合性ルールを持つ
-
-### リポジトリ
-
-- ドメインモデルのみを扱う
-- 永続化の詳細を隠蔽
-- テスト用のインメモリ実装を提供
-
-### アダプターパターン
-
-- 外部依存を抽象化
-- インターフェースは呼び出し側で定義
-- テスト時は容易に差し替え可能
-
-## 実装手順
-
-1. **型設計**
-   - まず型を定義
-   - ドメインの言語を型で表現
-
-2. **純粋関数から実装**
-   - 外部依存のない関数を先に
-   - テストを先に書く
-
-3. **副作用を分離**
-   - IO操作は関数の境界に押し出す
-   - 副作用を持つ処理をPromiseでラップ
-
-4. **アダプター実装**
-   - 外部サービスやDBへのアクセスを抽象化
-   - テスト用モックを用意
-
-## プラクティス
-
-- 小さく始めて段階的に拡張
-- 過度な抽象化を避ける
-- コードよりも型を重視
-- 複雑さに応じてアプローチを調整
-
-## コードスタイル
-
-- 関数優先（クラスは必要な場合のみ）
-- アロー関数の使用を推奨
-- 不変更新パターンの活用
-- 早期リターンで条件分岐をフラット化
-
-## テスト戦略
-
-- 純粋関数の単体テストを優先
-- インメモリ実装によるリポジトリテスト
-- テスト可能性を設計に組み込む
-- アサートファースト：期待結果から逆算
-
-# テスト駆動開発 (TDD) の基本
-
-## 基本概念
-
-テスト駆動開発（TDD）は以下のサイクルで進める開発手法です：
-
-1. **Red**: まず失敗するテストを書く
-2. **Green**: テストが通るように最小限の実装をする
-3. **Refactor**: コードをリファクタリングして改善する
-
-## 重要な考え方
-
-- **テストは仕様である**: テストコードは実装の仕様を表現したもの
-- **Assert-Act-Arrange の順序で考える**:
-  1. まず期待する結果（アサーション）を定義
-  2. 次に操作（テスト対象の処理）を定義
-  3. 最後に準備（テスト環境のセットアップ）を定義
-- **テスト名は「状況→操作→結果」の形式で記述**: 例:
-  「有効なトークンの場合にユーザー情報を取得すると成功すること」
-
-## TypeScript
-
-TypeScriptでのコーディングにおける一般的なベストプラクティスをまとめます。
-
-### 方針
-
-- 最初に型と、それを処理する関数のインターフェースを考える
-- コードのコメントとして、そのファイルがどういう仕様化を可能な限り明記する
-- 実装が内部状態を持たないとき、 class による実装を避けて関数を優先する
-- 副作用を抽象するために、アダプタパターンで外部依存を抽象し、テストではインメモリなアダプタで処理する
-
-### 型の使用方針
-
-1. 具体的な型を使用
-   - any の使用を避ける
-   - unknown を使用してから型を絞り込む
-   - Utility Types を活用する
-
-2. 型エイリアスの命名
-   - 意味のある名前をつける
-   - 型の意図を明確にする
-   ```ts
-   // Good
-   type UserId = string;
-   type UserData = {
-     id: UserId;
-     createdAt: Date;
-   };
-
-   // Bad
-   type Data = any;
-   ```
-
-### エラー処理
-
-1. try-catchの使用
-   ```ts
-   async const fetchUser = (id: string) => {
-     try {
-       const response = await fetch(`/api/users/${id}`);
-       if (!response.ok) {
-         switch (response.status) {
-           case 404:
-              throw new Error("User not found");
-           case 401:
-              throw new Error("Unauthorized");
-           default:
-              throw new Error("Unknown error");
-         }
-       }
-       return ok(await response.json());
-     } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.error(message);
-     }
-   }
-   ```
+- **機能ベースのファイル構成**: コンポーネントは「タイプ別」ではなく「機能別」にグループ化
+- **新規ファイル作成基準**: 独立した機能、大きすぎるファイル(500 行以上)、複数機能で使用される共通コードの場合のみ
+- **共有コンポーネント**: 再利用可能なコンポーネントは`shared.tsx`に配置
+- **ファイル内構造**: ヘルパーコンポーネント → メインコンポーネントの順で配置
 
 ### 実装パターン
 
-1. 関数ベース（状態を持たない場合）
-   ```ts
-   // インターフェース
-   interface Logger {
-     log(message: string): void;
-   }
+```tsx
+// app/components/feature-name.tsx
 
-   // 実装
-   const createLogger(): Logger {
-     return {
-       log(message: string): void {
-         console.log(`[${new Date().toISOString()}] ${message}`);
-       },
-     };
-   }
-   ```
+// 依存関係のインポート
+import { useState } from "react";
+import type { RequiredTypes } from "~/types";
 
-2. classベース（状態を持つ場合）
-   ```ts
-   interface Cache<T> {
-     get(key: string): T | undefined;
-     set(key: string, value: T): void;
-   }
+// ヘルパーコンポーネント
+function HelperComponent({ prop1, prop2 }) {
+  // 実装
+}
 
-   class TimeBasedCache<T> implements Cache<T> {
-     private items = new Map<string, { value: T; expireAt: number }>();
+// メインコンポーネント
+export function MainFeature() {
+  // 状態管理
+  const [state, setState] = useState(initialValue);
 
-     constructor(private ttlMs: number) {}
+  // イベントハンドラ
+  const handleEvent = () => {
+    // 実装
+  };
 
-     get(key: string): T | undefined {
-       const item = this.items.get(key);
-       if (!item || Date.now() > item.expireAt) {
-         return undefined;
-       }
-       return item.value;
-     }
+  // レンダリング
+  return (
+    <div>
+      <HelperComponent prop1={value} prop2={value} />
+    </div>
+  );
+}
+```
 
-     set(key: string, value: T): void {
-       this.items.set(key, {
-         value,
-         expireAt: Date.now() + this.ttlMs,
-       });
-     }
-   }
-   ```
+## ストア層設計
 
-3. Adapterパターン（外部依存の抽象化）
-   ```ts
-   // 抽象化
-   type Fetcher = <T>(path: string) => Promise<Result<T, ApiError>>;
+### 組織化原則
 
-   // 実装
-   function createFetcher(headers: Record<string, string>): Fetcher {
-     return async <T>(path: string) => {
-       try {
-         const response = await fetch(path, { headers });
-         if (!response.ok) {
-           return err({
-             type: "network",
-             message: `HTTP error: ${response.status}`,
-           });
-         }
-         return ok(await response.json());
-       } catch (error) {
-         return err({
-           type: "network",
-           message: error instanceof Error ? error.message : "Unknown error",
-         });
-       }
-     };
-   }
+- **ドメインベースのファイル構成**: ストアは「グローバル」ではなく「ドメイン別」に分割（例：`app/stores/status-bar.ts`）
+- **明確な責任境界**: 各ストアは特定の機能ドメインに関連する状態のみを管理
+- **Zustand の活用**: シンプルな API を活用した最小限のボイラープレート
+- **必要最小限の状態**: 冗長な状態や導出可能な値は避ける
+- **明確なアクション命名**: 動詞+名詞の形式で一貫した命名規則を使用
 
-   // 利用
-   class ApiClient {
-     constructor(
-       private readonly getData: Fetcher,
-       private readonly baseUrl: string,
-     ) {}
+### 実装パターン
 
-     async getUser(id: string): Promise<Result<User, ApiError>> {
-       return await this.getData(`${this.baseUrl}/users/${id}`);
-     }
-   }
-   ```
+```tsx
+// app/stores/domain-name.ts
 
-### 実装の選択基準
+// 型定義
+interface DomainState {
+  data: DataType;
+  status: "idle" | "loading" | "success" | "error";
 
-1. 関数を選ぶ場合
-   - 単純な操作のみ
-   - 内部状態が不要
-   - 依存が少ない
-   - テストが容易
+  // アクション
+  setData: (data: DataType) => void;
+  clearData: () => void;
+}
 
-2. classを選ぶ場合
-   - 内部状態の管理が必要
-   - 設定やリソースの保持が必要
-   - メソッド間で状態を共有
-   - ライフサイクル管理が必要
+// ストア作成
+export const useDomainStore = create<DomainState>((set) => ({
+  // 初期状態
+  data: null,
+  status: "idle",
 
-3. Adapterを選ぶ場合
-   - 外部依存の抽象化
-   - テスト時のモック化が必要
-   - 実装の詳細を隠蔽したい
-   - 差し替え可能性を確保したい
+  // アクション
+  setData: (data) => set({ data, status: "success" }),
+  clearData: () => set({ data: null, status: "idle" }),
+}));
 
-### 一般的なルール
+// 選択的サブスクリプション（パフォーマンス最適化）
+export const useDomainStatus = () => useDomainStore((state) => state.status);
+```
 
-1. 依存性の注入
-   - 外部依存はコンストラクタで注入
-   - テスト時にモックに置き換え可能に
-   - グローバルな状態を避ける
+## リポジトリ層設計
 
-2. インターフェースの設計
-   - 必要最小限のメソッドを定義
-   - 実装の詳細を含めない
-   - プラットフォーム固有の型を避ける
+### 組織化原則
 
-3. テスト容易性
-   - モックの実装を簡潔に
-   - エッジケースのテストを含める
-   - テストヘルパーを適切に分離
+- **ストレージタイプベースのファイル構成**: リポジトリは「エンティティ別」ではなく「ストレージタイプ別」にグループ化
+- **共通インターフェース**: 共通のリポジトリインターフェースは`types.ts`に配置
+- **エントリーポイント**: `index.ts`をメインのエントリーポイントとして使用
+- **一貫したエラー処理**: ストレージ固有のエラーを共通のエラー型に変換
 
-4. コードの分割
-   - 単一責任の原則に従う
-   - 適切な粒度でモジュール化
-   - 循環参照を避ける
+### 実装パターン
+
+```tsx
+// app/repositories/types.ts
+export interface Repository<T> {
+  getAll(): Promise<T[]>;
+  getById(id: string): Promise<T | null>;
+  // 基本操作
+}
+
+// app/repositories/storage-type/index.ts
+import { Repository } from "../types";
+
+// ヘルパー関数
+const storageHelpers = {
+  getData: <T,>(key: string): T[] => {
+    /* 実装 */
+  },
+  setData: <T,>(key: string, data: T[]): void => {
+    /* 実装 */
+  },
+};
+
+// リポジトリ実装
+function createRepository<T>(): Repository<T> {
+  return {
+    async getAll(): Promise<T[]> {
+      // 実装
+    },
+    // 他のメソッド
+  };
+}
+
+// エクスポート
+export const entityRepository = createRepository<EntityType>();
+```
+
+## 新機能実装のワークフロー
+
+1. **機能の範囲を特定**: 新しいスタンドアロン機能か、既存機能の拡張かを判断
+2. **適切なファイルを選択**: スタンドアロン機能には新しいファイル、拡張には既存ファイルを使用
+3. **インターフェース設計**: 必要な型とインターフェースを定義
+4. **実装**: ヘルパーから始めてメイン機能を構築
+5. **共有要素の抽出**: 他の場所で再利用できる要素があれば、共有ファイルに移動
+
+## AI 駆動開発のための最適化
+
+- **関連コードの共存**: 使用される場所の近くに配置
+- **パターン認識の促進**: 一貫したコード構造と命名規則
+- **明示的な意図**: 説明的な変数名と適切なコメント
