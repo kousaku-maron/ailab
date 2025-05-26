@@ -1,13 +1,5 @@
-# Output
-.clinerules
-.roomodes
-.claude_preferences
-
 # docs
 docs/note/*.md
 
 # Mac
 .DS_Store
-
-# Variables
-variables.json
